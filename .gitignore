@@ -1,0 +1,11 @@
+data/*
+!data/full-site-content.json
+.cache/
+bin/
+artifacts/
+integration/
+scripts/
+web/node_modules/
+web/dist/
+*.log
+.env
