@@ -170,6 +170,9 @@ CREATE TABLE IF NOT EXISTS section_items(id INTEGER PRIMARY KEY AUTOINCREMENT,se
 	if err := a.applyDoctorRosterMigration(); err != nil {
 		return err
 	}
+	if err := a.applyDoctorRosterV2(); err != nil {
+		return err
+	}
 	if err := a.seedCMS(); err != nil {
 		return err
 	}
@@ -249,6 +252,48 @@ func (a *app) applyDoctorRosterMigration() error {
 		return err
 	}
 	if _, err = tx.Exec("INSERT INTO app_migrations(name) VALUES('doctor_roster_live_v1')"); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (a *app) applyDoctorRosterV2() error {
+	var done int
+	if err := a.db.QueryRow("SELECT COUNT(*) FROM app_migrations WHERE name='doctor_roster_source_v2'").Scan(&done); err != nil {
+		return err
+	}
+	if done > 0 {
+		return nil
+	}
+	tx, err := a.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`INSERT INTO doctors(name,slug,photo,specialty,qualifications,experience,bio,availability,organization,featured,sort_order,published)
+		VALUES(?,?,?,?,?,?,?,?,?,1,3,1)
+		ON CONFLICT(slug) DO UPDATE SET name=excluded.name,photo=excluded.photo,specialty=excluded.specialty,qualifications=excluded.qualifications,experience=excluded.experience,bio=excluded.bio,availability=excluded.availability,organization=excluded.organization,featured=1,sort_order=3,published=1,updated_at=CURRENT_TIMESTAMP`,
+		"Dr. Shaila Sharmin Shahnewaz", "dr-shaila-sharmin-shahnewaz", "/images/dr-shaila-sharmin-shahnewaz-studio.png", "Physical Medicine & Rehabilitation", "MBBS\nFCPS (Physical Medicine & Rehabilitation)\nShaheed Monsur Ali Medical College Hospital, Dhaka", "Special consult doctor", "Associate Professor and specialist in Physical Medicine & Rehabilitation.", "Contact Upasham Plus for availability", "Associate Professor, Department of Physical Medicine & Rehabilitation")
+	if err != nil {
+		return err
+	}
+	updates := []struct {
+		slug  string
+		name  string
+		order int
+	}{
+		{"dr-jony-chowdhury", "Dr. Jony Chowdhury", 1},
+		{"dr-shuvojit-paik", "Dr. Shuvojit Paik", 2},
+		{"dr-arshi-tasnim", "Dr. Arshi Tasnim", 4},
+		{"dr-sadia-rahman-shifa", "Dr. Sadia Rahman Shifa", 5},
+		{"dr-dipa-agarwala", "Dr.Dipa Agarwala", 6},
+	}
+	for _, d := range updates {
+		if _, err = tx.Exec("UPDATE doctors SET name=?,sort_order=?,published=1,updated_at=CURRENT_TIMESTAMP WHERE slug=?", d.name, d.order, d.slug); err != nil {
+			return err
+		}
+	}
+	if _, err = tx.Exec("INSERT INTO app_migrations(name) VALUES('doctor_roster_source_v2')"); err != nil {
 		return err
 	}
 	return tx.Commit()
