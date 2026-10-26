@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -401,7 +402,7 @@ func decode(r *http.Request, v any) error {
 	return d.Decode(v)
 }
 func spa(w http.ResponseWriter, r *http.Request) {
-	clean := strings.TrimPrefix(filepath.Clean(r.URL.Path), string(filepath.Separator))
+	clean := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 	clean = strings.TrimPrefix(clean, "admin/")
 	if clean == "admin" {
 		clean = "index.html"
