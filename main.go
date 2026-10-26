@@ -357,6 +357,10 @@ func decode(r *http.Request, v any) error {
 }
 func spa(w http.ResponseWriter, r *http.Request) {
 	clean := strings.TrimPrefix(filepath.Clean(r.URL.Path), string(filepath.Separator))
+	clean = strings.TrimPrefix(clean, "admin/")
+	if clean == "admin" {
+		clean = "index.html"
+	}
 	if clean == "." || clean == "preview" {
 		clean = "index.html"
 	}

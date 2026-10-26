@@ -1,0 +1,19 @@
+[Unit]
+Description=Upasham Plus CMS API and admin portal
+After=network.target
+
+[Service]
+Type=simple
+User=fameit
+Group=fameit
+WorkingDirectory=/home/fameit/upasham-cms
+ExecStart=/home/fameit/upasham-cms/upasham-cms
+Environment=PORT=8095
+Environment=COOKIE_SECURE=true
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
